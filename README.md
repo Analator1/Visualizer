@@ -6,7 +6,7 @@
 
 An intuitive desktop application to convert audio files into multi-band waveform images, perfect for use in visualizers and video editing projects.
 
-Created by **[sh4rk](https://sh4rkk.com/)** and **[Analator](https://portfolio-analator.com)**
+Created by **[sh4rk](https://sh4rkk.com/)** and **[Analator](https://portfolio-analator.web.app/)**
 
 ---
 
@@ -41,7 +41,7 @@ We are providing both options for full transparency. Since the executable is not
 
 This is the easiest way to get started if you are on Windows.
 
-1.  Go to the **[Releases Page](https://github.com/your-username/mdsiam3031/Visualizer/releases)** of this repository.
+1.  Go to the **[Releases Page](https://github.com/Analator1/Visualizer/releases)** of this repository.
 2.  Download the latest `.exe` file from the assets.
 3.  Run the application. No installation is required.
 
@@ -57,7 +57,7 @@ If you prefer to run the application from the source code, follow these steps.
 
 1.  **Clone the repository:**
     ```sh
-    git clone https://github.com/your-username/mdsiam3031/Visualizer.git
+    git clone https://github.com/Analator1/Visualizer.git
     cd Visualizer
     ```
 
