@@ -10,14 +10,11 @@ from tqdm import tqdm
 import time
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QLabel, QFileDialog, QProgressBar, QButtonGroup,
-                             QRadioButton, QFrame, QSizePolicy, QMessageBox, QGraphicsDropShadowEffect)
+                             QRadioButton, QFrame, QSizePolicy, QMessageBox, QGraphicsDropShadowEffect, QComboBox)
 from PyQt5.QtCore import (Qt, QSize, QPropertyAnimation, QEasingCurve, QPoint, 
                           pyqtProperty, QThread, pyqtSignal, QTimer, QUrl)
 from PyQt5.QtGui import (QFont, QPalette, QColor, QRadialGradient, QPainter, QIcon,
                          QPainterPath, QBrush, QLinearGradient, QDesktopServices, QPixmap)
-
-
-
 
 def resource_path(relative_path):
     try:
@@ -178,6 +175,64 @@ class ModernRadioButton(QRadioButton):
         super().nextCheckState()
         self.update_style()
 
+class ModernComboBox(QComboBox):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFont(QFont("Inter", 10))
+        self.setMinimumHeight(40)
+        
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(10)
+        shadow.setColor(QColor(25, 162, 212, 100))
+        shadow.setOffset(0, 2)
+        self.setGraphicsEffect(shadow)
+        
+        self.update_style()
+        
+    def update_style(self):
+        self.setStyleSheet("""
+            QComboBox {
+                background-color: #282828;
+                color: #FFFFFF;
+                border: 2px solid #B3B3B3;
+                border-radius: 8px;
+                padding: 8px 15px;
+                font-weight: normal;
+            }
+            QComboBox:hover {
+                border-color: #19a2d4;
+                color: #19a2d4;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 30px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid #B3B3B3;
+                width: 0px;
+                height: 0px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #282828;
+                color: #FFFFFF;
+                border: 2px solid #19a2d4;
+                border-radius: 8px;
+                selection-background-color: #19a2d4;
+                outline: none;
+            }
+            QComboBox QAbstractItemView::item {
+                padding: 8px 15px;
+                border-bottom: 1px solid #333333;
+            }
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #19a2d4;
+                color: #FFFFFF;
+            }
+        """)
+
 class DropArea(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -262,11 +317,12 @@ class ProcessingThread(QThread):
     progress_updated = pyqtSignal(int, str)
     processing_finished = pyqtSignal(bool, str)
     
-    def __init__(self, audio_files, output_path, preset_choice, parent=None):
+    def __init__(self, audio_files, output_path, preset_choice, output_format, parent=None):
         super().__init__(parent)
         self.audio_files = audio_files
         self.output_path = output_path
         self.preset_choice = preset_choice
+        self.output_format = output_format
         self.is_running = True
         
     def run(self):
@@ -318,7 +374,9 @@ class ProcessingThread(QThread):
                 
                 waveform_png = f"{temp_folder}/{safe_name}_waveform.png"
                 resized_png = f"{temp_folder}/{safe_name}_resized.png"
-                output_file = f"{safe_name}_Waveform_1b.png"
+                
+                format_ext = self.get_format_extension()
+                output_file = f"{safe_name}_Waveform_1b.{format_ext}"
                 
                 try:
                     subprocess.run(
@@ -334,8 +392,9 @@ class ProcessingThread(QThread):
                     if process_waveform_image(waveform_png, resized_png, 8000):
                         with Image.open(resized_png) as img:
                             rgb_img = img.convert('RGB')
-                            stretched_img = rgb_img.resize((8000, 10), Image.Resampling.BILINEAR)
-                            stretched_img.save(output_file)
+                            stretched_img = rgb_img.resize((8000, 10), Image.Resampling.NEAREST)
+                            
+                            self.save_image_in_format(stretched_img, output_file)
                     else:
                         return False
                         
@@ -361,7 +420,7 @@ class ProcessingThread(QThread):
                 filter_complex += f",asplit={config['bands']}"
                 for i in range(1, config['bands'] + 1):
                     filter_complex += f"[in{i}]"
-                filter_complex += ";"
+                filter_complex += ";" 
                 
                 for i in range(1, config['bands'] + 1):
                     filter_complex += f"[in{i}]{config['filters'][i-1]}[out{i}];"
@@ -412,20 +471,32 @@ class ProcessingThread(QThread):
                     resized_images.append(None)
             
             if any(resized_images):
-                final_image = Image.new('RGB' if config['bands'] == 3 else 'L', (width, config['bands']))
-                for y, img_path in enumerate(resized_images):
-                    if img_path and os.path.exists(img_path):
-                        try:
-                            with Image.open(img_path) as band_img:
-                                final_image.paste(band_img, (0, y))
-                        except Exception:
-                            pass
-                
                 if config['bands'] == 3:
-                    final_image = final_image.resize((width, 10), Image.Resampling.BILINEAR)
+                    final_image = Image.new('RGB', (width, config['bands']))
+                    for y, img_path in enumerate(resized_images):
+                        if img_path and os.path.exists(img_path):
+                            try:
+                                with Image.open(img_path) as band_img:
+                                    band_img = band_img.convert('RGB')
+                                    final_image.paste(band_img, (0, y))
+                            except Exception:
+                                pass
+                    final_image = final_image.resize((width, 10), Image.Resampling.NEAREST)
+                else:
+                    final_image = Image.new('L', (width, config['bands']))
+                    for y, img_path in enumerate(resized_images):
+                        if img_path and os.path.exists(img_path):
+                            try:
+                                with Image.open(img_path) as band_img:
+                                    band_img = band_img.convert('L')
+                                    final_image.paste(band_img, (0, y))
+                            except Exception:
+                                pass
                 
-                output_file = f"{safe_name}_Waveform_{config['bands']}b.png"
-                final_image.save(output_file)
+                format_ext = self.get_format_extension()
+                output_file = f"{safe_name}_Waveform_{config['bands']}b.{format_ext}"
+                
+                self.save_image_in_format(final_image, output_file)
             
             for f in os.listdir(temp_folder):
                 if f.startswith(f"{safe_name}_"):
@@ -447,6 +518,39 @@ class ProcessingThread(QThread):
             except:
                 pass
             return False
+    
+    def get_format_extension(self):
+        """Get file extension based on selected format"""
+        format_map = {
+            0: "png",
+            1: "png",
+            2: "jpg",
+            3: "jpg",
+        }
+        return format_map.get(self.output_format, "png")
+    
+    def save_image_in_format(self, image, output_path):
+        """Save image in the selected format with appropriate settings"""
+        try:
+            if output_path.endswith('.png'):
+                if self.output_format == 0:
+                    image.save(output_path, format='PNG', compress_level=0)
+                else:
+                    image.save(output_path, format='PNG', compress_level=6)
+                    
+            elif output_path.endswith('.jpg'):
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
+                    
+                if self.output_format == 2:
+                    image.save(output_path, format='JPEG', quality=95, optimize=True)
+                else:
+                    image.save(output_path, format='JPEG', quality=30, optimize=True)
+                    
+        except Exception as e:
+            print(f"Error saving image in format: {e}")
+            fallback_path = output_path.split('.')[0] + '.png'
+            image.save(fallback_path, format='PNG')
 
 class AudioVisualizerGUI(QMainWindow):
     def __init__(self):
@@ -454,6 +558,7 @@ class AudioVisualizerGUI(QMainWindow):
         self.audio_files = []
         self.output_path = os.path.join(os.path.expanduser("~"), "Downloads")
         self.preset_choice = '3'
+        self.output_format = 1
         self.processing_thread = None
         self.progress_animation = None
         self.progress_timer = QTimer()
@@ -464,7 +569,7 @@ class AudioVisualizerGUI(QMainWindow):
         
     def setup_ui(self):
         self.setWindowTitle("Audio Visualiser Converter")
-        self.setFixedSize(1000, 600)
+        self.setFixedSize(1000, 670)
         try:
             icon_path = resource_path("Visualiser_Logo.png")
 
@@ -501,7 +606,7 @@ class AudioVisualizerGUI(QMainWindow):
         
         creator_label = QLabel(
             '<span style="color: white;">by </span>'
-            '<a href="https://sh4rkk.com/" style="color:#6ed1ff; text-decoration: underline;">sh4rk</a>'
+            '<a href="https://sh4rkk.com/shop" style="color:#6ed1ff; text-decoration: underline;">sh4rk</a>'
         )
         creator_label.setAlignment(Qt.AlignCenter)
         creator_label.setOpenExternalLinks(True)
@@ -539,6 +644,28 @@ class AudioVisualizerGUI(QMainWindow):
         output_layout.addWidget(self.browse_button)
         
         main_layout.addLayout(output_layout)
+        
+        format_layout = QHBoxLayout()
+        format_layout.setSpacing(10)
+        
+        format_label = QLabel("Output Format:")
+        format_label.setStyleSheet("color: #FFFFFF; font-size: 12px; font-weight: bold;")
+        format_label.setFont(QFont("Inter", 12, QFont.Bold))
+        format_layout.addWidget(format_label)
+        
+        self.format_combo = ModernComboBox()
+        formats = [
+            "PNG HQ - Lossless Compression - Highest Quality",
+            "PNG - Standard Compression - Good Quality", 
+            "JPG - 95% Quality - Noisy, Fast",
+            "JPG LQ - 30% Quality - Very Noisy, Fastest"
+        ]
+        self.format_combo.addItems(formats)
+        self.format_combo.setCurrentIndex(1)
+        self.format_combo.currentIndexChanged.connect(self.format_changed)
+        format_layout.addWidget(self.format_combo, 1)
+        
+        main_layout.addLayout(format_layout)
         
         preset_label = QLabel("Select Mode:")
         preset_label.setStyleSheet("color: #FFFFFF; font-size: 14px; font-weight: bold;")
@@ -588,6 +715,9 @@ class AudioVisualizerGUI(QMainWindow):
             }}
         """)
         
+    def format_changed(self, index):
+        self.output_format = index
+        
     def update_radio_styles(self):
         for btn in [self.preset_1, self.preset_2, self.preset_3, self.preset_4]:
             btn.update_style()
@@ -614,17 +744,34 @@ class AudioVisualizerGUI(QMainWindow):
     def handle_dropped_files(self, file_paths):
         try:
             extensions = ('.mp3', '.flac', '.ogg', '.wav', '.m4a')
-            self.audio_files = [f for f in file_paths if f.lower().endswith(extensions)]
+            valid_files = [f for f in file_paths if f.lower().endswith(extensions)]
+            
+            if not valid_files:
+                self.drop_area.setText("No valid audio files found.\nDrop audio files here\nor click to browse")
+                self.process_button.setEnabled(False)
+                return
+                
+            for file_path in valid_files:
+                if file_path not in self.audio_files:
+                    self.audio_files.append(file_path)
             
             if self.audio_files:
-                first_file_dir = os.path.dirname(self.audio_files[0])
-                self.output_path = first_file_dir
-                self.output_path_label.setText(first_file_dir)
+                file_dirs = set(os.path.dirname(f) for f in self.audio_files)
+                
+                if len(file_dirs) == 1:
+                    self.output_path = list(file_dirs)[0]
+                else:
+                    self.output_path = os.path.join(os.path.expanduser("~"), "Downloads")
+                
+                self.output_path_label.setText(self.output_path)
                 
                 file_names = [os.path.basename(f) for f in self.audio_files]
-                display_text = f"{len(self.audio_files)} file(s) selected:\n" + "\n".join(file_names[:3])
-                if len(self.audio_files) > 3:
-                    display_text += "\n..."
+                
+                if len(file_names) <= 3:
+                    display_text = f"{len(self.audio_files)} file(s) selected:\n" + "\n".join(file_names)
+                else:
+                    display_text = f"{len(self.audio_files)} file(s) selected:\n" + "\n".join(file_names[:3]) + f"\n+{len(file_names) - 3} more"
+                
                 self.drop_area.setText(display_text)
                 self.process_button.setEnabled(True)
             else:
@@ -648,16 +795,21 @@ class AudioVisualizerGUI(QMainWindow):
         selected_button = self.preset_group.checkedButton()
         if selected_button == self.preset_1:
             self.preset_choice = '1'
-            self.animation_duration = 400
+            base_duration = 900
         elif selected_button == self.preset_2:
             self.preset_choice = '2'
-            self.animation_duration = 125
+            base_duration = 1850
         elif selected_button == self.preset_3:
             self.preset_choice = '3'
-            self.animation_duration = 1500
+            base_duration = 2000
         elif selected_button == self.preset_4:
             self.preset_choice = '4'
-            self.animation_duration = 4000
+            base_duration = 4500
+            
+        if self.output_format == 0:
+            base_duration += 200
+            
+        self.animation_duration = base_duration * len(self.audio_files)
             
         self.drop_area.setEnabled(False)
         self.browse_button.setEnabled(False)
@@ -676,7 +828,7 @@ class AudioVisualizerGUI(QMainWindow):
         
         self.progress_timer.start(int(self.progress_interval))
         
-        self.processing_thread = ProcessingThread(self.audio_files, self.output_path, self.preset_choice)
+        self.processing_thread = ProcessingThread(self.audio_files, self.output_path, self.preset_choice, self.output_format)
         self.processing_thread.progress_updated.connect(self.update_progress)
         self.processing_thread.processing_finished.connect(self.processing_finished)
         self.processing_thread.start()
