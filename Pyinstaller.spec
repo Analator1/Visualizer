@@ -17,7 +17,7 @@ datas_to_bundle = [
 
 
 a = Analysis(
-    ['VisualiserV3.py'],
+    ['Visualiser_Script_V2.py'],
     pathex=[],
     binaries=binaries_to_bundle,
     datas=datas_to_bundle,
