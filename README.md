@@ -24,7 +24,8 @@ Created by **[sh4rk](https://sh4rkk.com/)** and **[Analator](https://portfolio-a
   - **1-Band:** A classic, full-spectrum waveform.
   - **3-Band:** Splits audio into Low, Mid, and High frequencies (Red, Green, Blue).
   - **10-Band (Recommended):** Logarithmic frequency bands for detailed visualization.
-  - **25-Band:** High-resolution frequency separation for professional use.
+  - **25-Band:** Also logarithmic with higher resolution than 10-Band, though it may not look great on certain sounds.
+- **Quality Options:** Supports multiple quality levels for smaller file sizes and faster rendering inside DaVinci Resolve.
 - **User-Friendly:** A clean, modern, and easy-to-navigate interface.
 - **No Installation (for EXE):** The pre-compiled version works out-of-the-box on Windows.
 - **Cross-Platform (from source):** The Python script can be run on Windows, macOS, and Linux.
