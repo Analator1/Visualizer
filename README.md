@@ -4,7 +4,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.x-brightgreen.svg)
 ![Framework](https://img.shields.io/badge/framework-PyQt5-orange.svg)
 
-An intuitive desktop application to convert audio files into multi-band waveform images, perfect for use in visualizers and video editing projects.
+An intuitive desktop application that converts audio files into multi-band waveform images, perfect for use with sh4rk’s Audio Visualiser plugin.
 
 Created by **[sh4rk](https://sh4rkk.com/)** and **[Analator](https://portfolio-analator.web.app/)**
 
