@@ -69,7 +69,7 @@ If you prefer to run the application from the source code, follow these steps.
 
 3.  **Run the application:**
     ```sh
-    python Visualiser_Script.py
+    python Visualiser_Script_V2.py
     ```
 
 ---
