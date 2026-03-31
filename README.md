@@ -25,6 +25,9 @@ Created by **[sh4rk](https://sh4rkk.com/)** and **[Analator](https://portfolio-a
   - **3-Band:** Splits audio into Low, Mid, and High frequencies (Red, Green, Blue).
   - **10-Band (Recommended):** Logarithmic frequency bands for detailed visualization.
   - **25-Band:** Also logarithmic with higher resolution than 10-Band, though it may not look great on certain sounds.
+  - **100-Band:** A much more detailed mode for users who need finer visual data.
+- **Auto Length:** Automatically calculates the audio length to generate the best possible data image.
+- **Unified Free/Studio Build:** The free and studio versions are now merged into one version with a toggle.
 - **Quality Options:** Supports multiple quality levels for smaller file sizes and faster rendering inside DaVinci Resolve.
 - **User-Friendly:** A clean, modern, and easy-to-navigate interface.
 - **No Installation (for EXE):** The pre-compiled version works out-of-the-box on Windows.
@@ -36,7 +39,7 @@ Created by **[sh4rk](https://sh4rkk.com/)** and **[Analator](https://portfolio-a
 
 You have two options to use this application: the simple pre-compiled version or running the raw Python script.
 
-We are providing both options for full transparency. Since the executable is not code-signed, some users may prefer to inspect the source code and run it directly.
+We are providing both options for full transparency. Since the executable is not code-signed, some users may prefer to inspect the source code and run it directly. The latest build includes both the free and studio modes in a single version with a toggle.
 
 ### Option 1: Pre-compiled EXE (Recommended for Windows)
 
@@ -69,8 +72,10 @@ If you prefer to run the application from the source code, follow these steps.
 
 3.  **Run the application:**
     ```sh
-    python Visualiser_Script_V2.py
+    python Visualiser_Script_V3.py
     ```
+
+    This build includes the combined free/studio toggle.
 
 ---
 

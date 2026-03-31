@@ -17,7 +17,7 @@ datas_to_bundle = [
 
 
 a = Analysis(
-    ['Visualiser_Script_V2_FREE_RESOLVE.py'],
+    ['Visualiser_Script_V3.py'],
     pathex=[],
     binaries=binaries_to_bundle,
     datas=datas_to_bundle,
@@ -49,7 +49,7 @@ exe = EXE(
     a.datas,
     [],
     exclude_binaries=False,
-    name='Audio Visualiser Converter V2 FREE RESOLVE',
+    name='Audio Visualiser Converter_V3',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
